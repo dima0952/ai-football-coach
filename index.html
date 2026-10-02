@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AI Football Coach</title>
+<style>
+:root {
+  --ink: #f4efe4;
+  --muted: #c9c0ae;
+  --card: #171c18;
+  --line: rgba(244, 239, 228, 0.14);
+  --gold: #e4c98a;
+  --pitch: #102418;
+  --font: "Segoe UI", sans-serif;
+  --serif: Georgia, serif;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; }
+body {
+  font-family: var(--font);
+  color: var(--ink);
+  background:
+    radial-gradient(900px 420px at 80% 0%, rgba(228, 201, 138, 0.16), transparent 55%),
+    linear-gradient(#0c1812, #08110d 40%, #102418);
+}
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+.shell { min-height: 100vh; display: grid; grid-template-columns: 240px 1fr; }
+.side {
+  padding: 24px 18px;
+  background: rgba(0, 0, 0, 0.28);
+  border-right: 1px solid var(--line);
+  display: flex; flex-direction: column; gap: 22px;
+}
+.brand { display: flex; gap: 10px; align-items: center; }
+.brand svg { width: 36px; height: 36px; color: var(--gold); }
+.brand strong { display: block; font-family: var(--serif); font-weight: 500; }
+.brand small, .who small { color: var(--muted); }
+.nav { display: grid; gap: 6px; }
+.nav button {
+  text-align: left; border: 0; background: transparent; color: var(--ink);
+  border-radius: 12px; padding: 11px 12px;
+}
+.nav button.active { background: #f4efe4; color: #142018; }
+.who { margin-top: auto; }
+.who b { display: block; font-family: var(--serif); font-size: 22px; font-weight: 500; }
+main { padding: 28px; background: #f4efe4; color: #1b1914; }
+main .muted { color: #5e574c; }
+main .kicker { color: #6d5420; }
+main .sheet { background: #fffaf1; color: #1b1914; border-color: rgba(27,25,20,0.12); }
+main input, main select, main textarea { background: #fff; color: #1b1914; border-color: rgba(27,25,20,0.16); }
+main .btn-ghost { color: #1b1914; border-color: rgba(27,25,20,0.2); }
+main .list li { border-bottom-color: rgba(27,25,20,0.12); }
+main .bar { background: rgba(27,25,20,0.08); }
+.kicker { letter-spacing: 0.16em; text-transform: uppercase; font-size: 11px; color: var(--gold); }
+h1, h2 { font-family: var(--serif); font-weight: 500; letter-spacing: -0.03em; }
+h1 { font-size: clamp(46px, 6vw, 78px); line-height: 0.9; margin: 8px 0 12px; }
+h2 { font-size: 32px; margin: 6px 0 8px; }
+.muted { color: var(--muted); }
+.hero { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 28px; align-items: center; min-height: 78vh; }
+.pitch {
+  height: 280px; border-radius: 24px; border: 1px solid var(--line); position: relative; overflow: hidden;
+  background: linear-gradient(#1f6a3d, #144f2e);
+}
+.pitch:before, .pitch:after {
+  content: ""; position: absolute; border: 2px solid rgba(255,255,255,0.75);
+}
+.pitch:before { inset: 28px 36px; border-radius: 4px; }
+.pitch:after { width: 90px; height: 90px; border-radius: 50%; left: 50%; top: 50%; transform: translate(-50%, -50%); }
+.sheet {
+  background: var(--card); border: 1px solid var(--line); border-radius: 22px; padding: 20px;
+}
+.form { display: grid; gap: 12px; }
+label { display: grid; gap: 6px; font-size: 13px; color: var(--muted); }
+input, select, textarea {
+  background: #0e1411; border: 1px solid var(--line); border-radius: 12px; padding: 12px;
+}
+.btn, .btn-ghost { border-radius: 999px; padding: 12px 16px; border: 1px solid transparent; }
+.btn { background: var(--gold); color: #1b1710; font-weight: 700; }
+.btn-ghost { background: transparent; color: var(--ink); border-color: var(--line); }
+.grid { display: grid; gap: 14px; }
+.grid-2 { grid-template-columns: 1.1fr 0.9fr; }
+.grid-3 { grid-template-columns: repeat(3, 1fr); }
+.row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.score { font-family: var(--serif); font-size: 76px; line-height: 0.8; }
+.bar { height: 8px; background: rgba(255,255,255,0.1); border-radius: 99px; overflow: hidden; }
+.bar span { display: block; height: 100%; background: var(--gold); }
+.bar.warn span { background: #e07a4c; }
+.tag { display: inline-flex; border-radius: 999px; padding: 5px 9px; font-size: 12px; background: rgba(228, 201, 138, 0.16); color: var(--gold); }
+.tag.bad { background: rgba(224, 122, 76, 0.18); color: #ffc7aa; }
+.drop { border: 1px dashed rgba(228, 201, 138, 0.5); border-radius: 16px; padding: 22px; text-align: center; }
+video { width: 100%; border-radius: 14px; max-height: 240px; background: #000; }
+.list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.list li { display: flex; justify-content: space-between; gap: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+.week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
+.split { display: flex; justify-content: space-between; gap: 10px; }
+@media (max-width: 900px) {
+  .shell, .hero, .grid-2, .grid-3, .week { grid-template-columns: 1fr; }
+  .who { margin-top: 0; }
+}
+
+svg.logo { width: 36px; height: 36px; }
+</style>
+</head>
+<body>
+<div class="shell">
+<aside class="side">
+<div class="brand">
+<svg class="logo" width="36" height="36" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="22" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M24 6c2 6 2 10 0 16-6 1-10 4-14 10 6 2 10 2 14-2 4 4 8 4 14 2-4-6-8-9-14-10 2-6 2-10 0-16z" fill="currentColor"/><circle cx="24" cy="24" r="3" fill="#f4efe4"/></svg>
+<div><strong>AI Football Coach</strong><small>скаутський кабінет</small></div>
+</div>
+<nav class="nav" id="nav" hidden>
+<button type="button" data-view="home" class="active">Кабінет</button>
+<button type="button" data-view="upload">Нове відео</button>
+<button type="button" data-view="plan">План</button>
+<button type="button" data-view="progress">Прогрес</button>
+</nav>
+<div class="who" id="who"></div>
+</aside>
+<main id="view"></main>
+</div>
+<script>
+const SKILLS = [
+  ["control", "Контроль м’яча"],
+  ["dribble", "Дриблінг"],
+  ["shot", "Удар"],
+  ["position", "Позиція"],
+  ["decision", "Швидкість рішень"],
+  ["offball", "Гра без м’яча"],
+  ["phys", "Фізика"]
+];
+
+const POSITIONS = {
+  GK: "Воротар",
+  CB: "Центральний захисник",
+  FB: "Крайній захисник",
+  DM: "Опорний півзахисник",
+  CM: "Центральний півзахисник",
+  AM: "Атакувальний півзахисник",
+  W: "Вінгер",
+  ST: "Нападник"
+};
+
+const DRILLS = {
+  control: ["Перший дотик у квадраті 4×4", "Прийом з розворотом під тиском", "Жонглювання 2×40 і прийом у русі"],
+  dribble: ["Слалом 6 конусів на швидкості", "Фінт і ривок на 8 метрів", "1 на 1 з обмеженням дотиків"],
+  shot: ["12 ударів після прийому", "Удар слабшою ногою, 8 повторів", "Завершення з кута штрафного"],
+  position: ["Відкривання між лініями", "Повернення в позицію після втрати", "Стійка і кут тіла перед прийомом"],
+  decision: ["Гра 3 на 2, максимум 2 дотики", "Вибір: пас чи удар за 1 секунду", "Сканування плечем перед прийомом"],
+  offball: ["Ривок у зону після пасу партнера", "Відкривання на півкорпусу", "Пресинг першого пасу, 6 повторів"],
+  phys: ["6×20 м старт з місця", "Інтервали 15 секунд робота / 20 відпочинок", "Координаційна драбинка + ривок"]
+};
+
+const store = {
+  load() {
+    try { return JSON.parse(localStorage.getItem("afc") || "null"); }
+    catch { return null; }
+  },
+  save(data) { localStorage.setItem("afc", JSON.stringify(data)); }
+};
+
+let state = store.load() || { player: null, sessions: [] };
+
+const view = document.querySelector("#view");
+const nav = document.querySelector("#nav");
+const who = document.querySelector("#who");
+
+nav.addEventListener("click", (e) => {
+  const btn = e.target.closest("button");
+  if (!btn) return;
+  show(btn.dataset.view);
+});
+
+function show(name) {
+  [...nav.children].forEach((b) => b.classList.toggle("active", b.dataset.view === name));
+  nav.hidden = !state.player;
+  who.innerHTML = state.player
+    ? `<small>${POSITIONS[state.player.position]}</small><b>${escapeHtml(state.player.name)}</b>`
+    : "";
+  const screens = { home, upload, plan, progress, start };
+  (screens[name] || start)();
+}
+
+function start() {
+  nav.hidden = true;
+  who.innerHTML = "";
+  view.innerHTML = `
+    <section class="hero">
+      <div>
+        <div class="kicker">Кабінет гравця</div>
+        <h1>Твоє поле.</h1>
+        <div class="pitch"></div>
+        <p class="muted">Відео, розбір, план на тиждень і прогрес. Спочатку ім’я і позиція.</p>
+      </div>
+      <form class="sheet form" id="join">
+        <div class="kicker">Профіль</div>
+        <label>Ім’я<input name="name" required placeholder="Твоє ім’я" /></label>
+        <label>Позиція
+          <select name="position">${Object.entries(POSITIONS).map(([k, v]) => `<option value="${k}">${v}</option>`).join("")}</select>
+        </label>
+        <label>Вік<input name="age" type="number" min="8" max="45" value="16" /></label>
+        <label>Робоча нога
+          <select name="foot"><option>Права</option><option>Ліва</option><option>Обидві</option></select>
+        </label>
+        <button class="btn" type="submit">Увійти в кабінет</button>
+      </form>
+    </section>`;
+  document.querySelector("#join").onsubmit = (e) => {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    state.player = {
+      name: f.get("name").trim(),
+      position: f.get("position"),
+      age: Number(f.get("age")),
+      foot: f.get("foot")
+    };
+    store.save(state);
+    show("home");
+  };
+}
+
+function home() {
+  const last = state.sessions[0];
+  view.innerHTML = `
+    <section class="sheet">
+      <div class="kicker">${POSITIONS[state.player.position]} · ${state.player.foot} нога</div>
+      <h2>${escapeHtml(state.player.name)}</h2>
+      <p class="muted">${state.sessions.length} відео в кабінеті. Зніми ролик — розбір ляже прямо на цей екран.</p>
+      <div class="row">
+        <button class="btn" onclick="show('upload')">Завантажити відео</button>
+        <button class="btn-ghost" onclick="resetAll()">Скинути</button>
+      </div>
+    </section>
+    <section class="grid grid-2" style="margin-top:14px">
+      <article class="sheet">
+        ${last ? `<div class="kicker">Останній розбір</div><div class="score">${last.overall}</div><p>${escapeHtml(last.title)}</p><p class="muted">${last.date} · ${last.kind}</p>` : `<h2>Поле пусте</h2><p class="muted">Перше відео відкриє оцінки, слабкі сторони і план.</p>`}
+      </article>
+      <article class="sheet">
+        <div class="kicker">На чому стояти</div>
+        ${last ? skillBars(last.scores) : `<p class="muted">Після ролика тут будуть контроль, удар, позиція і рішення.</p>`}
+      </article>
+    </section>
+    <section class="grid grid-3" style="margin-top:14px">${state.sessions.map(sessionCard).join("")}</section>`;
+}
+
+function sessionCard(s) {
+  return `<article class="sheet">
+    <div class="split"><span class="tag">${s.kind}</span><b>${s.overall}</b></div>
+    <h2 style="font-size:24px">${escapeHtml(s.title)}</h2>
+    <p class="muted">${s.date}<br>слабке: ${label(s.weak[0])}</p>
+  </article>`;
+}
+
+function upload() {
+  view.innerHTML = `
+    <section class="grid grid-2">
+      <article class="sheet">
+        <div class="kicker">Нове відео</div>
+        <h2>Кинь ролик на поле</h2>
+        <p class="muted">Тренування, матч або один навик. Прев’ю з’явиться тут.</p>
+        <video id="preview" hidden controls></video>
+      </article>
+      <form class="sheet form" id="up">
+        <div class="drop">Вибери відео<br><input id="file" type="file" accept="video/*" required style="margin-top:10px" /></div>
+        <label>Назва<input name="title" placeholder="Удар після флангу" required /></label>
+        <label>Тип<select name="kind"><option>Тренування</option><option>Матч</option><option>Окремий навик</option></select></label>
+        <label>Що знято<textarea name="note" rows="3" placeholder="Удар, дриблінг, позиція..."></textarea></label>
+        <label>Ключ Gemini<input name="key" type="password" placeholder="Встав ключ з aistudio.google.com" value="${localStorage.getItem("afc-key") || ""}" required /></label>
+        <button class="btn" type="submit">Розібрати</button>
+        <p id="status" class="muted"></p>
+      </form>
+    </section>`;
+  const file = document.querySelector("#file");
+  const preview = document.querySelector("#preview");
+  file.onchange = () => {
+    const f = file.files[0];
+    if (!f) return;
+    preview.hidden = false;
+    preview.src = URL.createObjectURL(f);
+    if (!document.querySelector("[name=title]").value) {
+      document.querySelector("[name=title]").value = f.name.replace(/\.[^.]+$/, "");
+    }
+  };
+  document.querySelector("#up").onsubmit = async (e) => {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    const key = f.get("key").trim();
+    localStorage.setItem("afc-key", key);
+    const status = document.querySelector("#status");
+    status.textContent = "Беру кадри з ролика...";
+    let session;
+    try {
+      const frames = await grabFrames(preview, 4);
+      status.textContent = "Дивлюсь кадри...";
+      session = await askGemini(key, frames, {
+        title: f.get("title"),
+        kind: f.get("kind"),
+        note: f.get("note"),
+        position: POSITIONS[state.player.position]
+      });
+    } catch (err) {
+      status.textContent = "Не вийшло: " + err.message;
+      return;
+    }
+    state.sessions.unshift(session);
+    store.save(state);
+    report(session);
+  };
+}
+
+function grabFrames(video, count) {
+  return new Promise((resolve, reject) => {
+    const take = () => {
+      if (!video.duration || !isFinite(video.duration)) {
+        reject(new Error("відео ще не провантажилось, зачекай секунду і натисни знову"));
+        return;
+      }
+      const canvas = document.createElement("canvas");
+      const scale = 480 / (video.videoWidth || 480);
+      canvas.width = 480;
+      canvas.height = Math.max(270, Math.round((video.videoHeight || 270) * scale));
+      const ctx = canvas.getContext("2d");
+      const frames = [];
+      let i = 0;
+      const next = () => {
+        if (i >= count) return resolve(frames);
+        video.currentTime = Math.max(0.2, (video.duration * (i + 1)) / (count + 1));
+        video.onseeked = () => {
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          frames.push(canvas.toDataURL("image/jpeg", 0.7).split(",")[1]);
+          i += 1;
+          next();
+        };
+      };
+      next();
+    };
+    if (video.readyState >= 1) take();
+    else video.onloadeddata = take;
+  });
+}
+
+async function askGemini(key, frames, info) {
+  const prompt = `Ти футбольний тренер. Подивись кадри ролика гравця. Позиція: ${info.position}. Тип: ${info.kind}. Нотатка: ${info.note || "немає"}.
+Поверни тільки JSON без markdown:
+{"overall":72,"scores":{"control":70,"dribble":66,"shot":60,"position":74,"decision":68,"offball":64,"phys":71},"strong":["control","position"],"weak":["shot","decision"],"moments":[{"t":"00:04","text":"що видно"},{"t":"00:12","text":"що виправити"}]}
+strong і weak — рівно по 2 ключі з scores. Текст українською, конкретно по кадрах.`;
+  const models = ["gemini-2.5-flash", "gemini-flash-latest", "gemini-2.0-flash"];
+  let res;
+  let used = "";
+  for (const model of models) {
+    used = model;
+    res = await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent?key=" + encodeURIComponent(key), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{
+          parts: [
+            { text: prompt },
+            ...frames.map((data) => ({ inline_data: { mime_type: "image/jpeg", data } }))
+          ]
+        }]
+      })
+    });
+    if (res.status !== 404) break;
+  }
+  if (!res.ok) throw new Error("ключ не прийнято або Google відхилив запит (" + res.status + ")");
+  const data = await res.json();
+  const text = data.candidates?.[0]?.content?.parts?.map((p) => p.text).join("\n") || "";
+  const json = JSON.parse(text.slice(text.indexOf("{"), text.lastIndexOf("}") + 1));
+  return {
+    id: Date.now(),
+    title: info.title,
+    kind: info.kind,
+    note: info.note,
+    date: new Date().toLocaleDateString("uk-UA"),
+    scores: json.scores,
+    strong: json.strong,
+    weak: json.weak,
+    overall: json.overall,
+    moments: json.moments
+  };
+}
+
+function analyze(input) {
+  const n = state.sessions.length;
+  const seed = hash(input.fileName + input.kind + state.player.position) % 17;
+  const base = {
+    GK: { control: 62, dribble: 40, shot: 48, position: 74, decision: 70, offball: 58, phys: 64 },
+    CB: { control: 66, dribble: 52, shot: 50, position: 76, decision: 68, offball: 64, phys: 70 },
+    FB: { control: 68, dribble: 70, shot: 58, position: 66, decision: 64, offball: 72, phys: 74 },
+    DM: { control: 74, dribble: 62, shot: 56, position: 72, decision: 76, offball: 68, phys: 66 },
+    CM: { control: 72, dribble: 66, shot: 64, position: 68, decision: 74, offball: 70, phys: 66 },
+    AM: { control: 74, dribble: 76, shot: 72, position: 64, decision: 70, offball: 66, phys: 60 },
+    W: { control: 70, dribble: 78, shot: 66, position: 60, decision: 64, offball: 72, phys: 74 },
+    ST: { control: 68, dribble: 70, shot: 76, position: 66, decision: 64, offball: 70, phys: 68 }
+  }[state.player.position];
+  const scores = {};
+  for (const [key] of SKILLS) {
+    const growth = Math.min(12, n * 2);
+    const wobble = ((seed + key.length * 3) % 9) - 4;
+    scores[key] = clamp(base[key] + growth + wobble, 35, 94);
+  }
+  const ranked = Object.entries(scores).sort((a, b) => b[1] - a[1]);
+  const strong = ranked.slice(0, 2).map(([k]) => k);
+  const weak = ranked.slice(-2).map(([k]) => k);
+  const overall = Math.round(Object.values(scores).reduce((a, b) => a + b, 0) / SKILLS.length);
+  return {
+    id: Date.now(),
+    title: input.title,
+    kind: input.kind,
+    note: input.note,
+    date: new Date().toLocaleDateString("uk-UA"),
+    scores, strong, weak, overall,
+    moments: moments(weak, strong)
+  };
+}
+
+function moments(weak, strong) {
+  return [
+    { t: "00:18", text: `Добрий епізод: ${label(strong[0]).toLowerCase()} виглядає стабільно.` },
+    { t: "00:41", text: `Тут просідає ${label(weak[0]).toLowerCase()} — рішення запізнє.` },
+    { t: "01:06", text: `Повтори цей момент повільно: ${label(weak[1]).toLowerCase()}.` }
+  ];
+}
+
+function report(s) {
+  view.innerHTML = `
+    <section class="sheet" style="margin-bottom:14px">
+      <div class="kicker">${s.date} · ${s.kind}</div>
+      <div class="score">${s.overall}</div>
+      <h2>${escapeHtml(s.title)}</h2>
+    </section>
+    <section class="grid grid-2">
+      <article class="sheet">${skillBars(s.scores)}</article>
+      <article class="sheet">
+        <h2>Сильні</h2>
+        ${s.strong.map((k) => `<p><span class="tag">${label(k)} · ${s.scores[k]}</span></p>`).join("")}
+        <h2>Слабкі</h2>
+        ${s.weak.map((k) => `<p><span class="tag bad">${label(k)} · ${s.scores[k]}</span></p>`).join("")}
+        <ul class="list">${s.moments.map((m) => `<li><b>${m.t}</b><span>${m.text}</span></li>`).join("")}</ul>
+        <div class="row">
+          <button class="btn" onclick="show('plan')">План на тиждень</button>
+          <button class="btn-ghost" onclick="show('home')">У кабінет</button>
+        </div>
+      </article>
+    </section>`;
+}
+
+function skillBars(scores) {
+  return `<div class="grid" style="margin-top:16px">${SKILLS.map(([k, name]) => `
+    <div>
+      <div class="row" style="justify-content:space-between"><span>${name}</span><b>${scores[k]}</b></div>
+      <div class="bar ${scores[k] < 65 ? "warn" : ""}"><span style="width:${scores[k]}%"></span></div>
+    </div>`).join("")}</div>`;
+}
+
+function plan() {
+  const last = state.sessions[0];
+  if (!last) {
+    view.innerHTML = `<article class="sheet"><h2>Спочатку потрібне відео</h2><button class="btn" onclick="show('upload')">Завантажити</button></article>`;
+    return;
+  }
+  const focus = last.weak;
+  const days = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Нд"].map((day, i) => {
+    if (i === 6) return { day, text: "Відновлення: 20 хвилин легкої роботи з м’ячем і перегляд свого ролика." };
+    const skill = focus[i % focus.length];
+    const drill = DRILLS[skill][i % DRILLS[skill].length];
+    return { day, text: `${label(skill)}: ${drill}. 4 підходи.` };
+  });
+  view.innerHTML = `
+    <section class="sheet" style="margin-bottom:14px">
+      <div class="kicker">Тиждень</div>
+      <h2>${label(focus[0])} і ${label(focus[1])}</h2>
+      <p class="muted">План зібраний з ролика «${escapeHtml(last.title)}».</p>
+    </section>
+    <section class="week">
+      ${days.map((d) => `<article class="sheet"><b>${d.day}</b><p>${d.text}</p></article>`).join("")}
+    </section>`;
+}
+
+function progress() {
+  if (state.sessions.length < 2) {
+    view.innerHTML = `<article class="sheet"><h2>Потрібно щонайменше 2 відео</h2><p class="muted">Завантаж ще один ролик — тут з’явиться різниця.</p><button class="btn" onclick="show('upload')">Нове відео</button></article>`;
+    return;
+  }
+  const newest = state.sessions[0];
+  const prev = state.sessions[1];
+  const rows = SKILLS.map(([k, name]) => {
+    const d = newest.scores[k] - prev.scores[k];
+    return `<li><span>${name}</span><b>${d > 0 ? "+" : ""}${d}</b></li>`;
+  }).join("");
+  view.innerHTML = `
+    <section class="grid grid-2">
+      <article class="sheet">
+        <div class="kicker">Порівняння</div>
+        <div class="score">${newest.overall - prev.overall >= 0 ? "+" : ""}${newest.overall - prev.overall}</div>
+        <p class="muted">${escapeHtml(newest.title)} проти ${escapeHtml(prev.title)}</p>
+        <ul class="list">${rows}</ul>
+      </article>
+      <article class="sheet">
+        <h2>Історія</h2>
+        <ul class="list">${state.sessions.map((s) => `<li><span>${s.date} · ${escapeHtml(s.title)}</span><b>${s.overall}</b></li>`).join("")}</ul>
+      </article>
+    </section>`;
+}
+
+function resetAll() {
+  localStorage.removeItem("afc");
+  state = { player: null, sessions: [] };
+  show("start");
+}
+
+function label(key) { return SKILLS.find(([k]) => k === key)[1]; }
+function clamp(n, a, b) { return Math.max(a, Math.min(b, n)); }
+function hash(s) { return [...s].reduce((a, c) => a + c.charCodeAt(0), 0); }
+function wait(ms) { return new Promise((r) => setTimeout(r, ms)); }
+function escapeHtml(s) {
+  return String(s)
+    .replace(/&/g, "&")
+    .replace(/</g, "<")
+    .replace(/>/g, ">")
+    .replace(/"/g, String.fromCharCode(38)+"quot;");
+}
+
+window.show = show;
+window.resetAll = resetAll;
+show(state.player ? "home" : "start");
+
+</script>
+</body>
+</html>
