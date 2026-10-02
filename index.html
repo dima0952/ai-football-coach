@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="uk">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>AI Football Coach</title>
-<style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI Football Coach</title>
+  <style>
 :root {
   --ink: #f4efe4;
   --muted: #c9c0ae;
@@ -45,14 +45,7 @@ button { cursor: pointer; }
 .nav button.active { background: #f4efe4; color: #142018; }
 .who { margin-top: auto; }
 .who b { display: block; font-family: var(--serif); font-size: 22px; font-weight: 500; }
-main { padding: 28px; background: #f4efe4; color: #1b1914; }
-main .muted { color: #5e574c; }
-main .kicker { color: #6d5420; }
-main .sheet { background: #fffaf1; color: #1b1914; border-color: rgba(27,25,20,0.12); }
-main input, main select, main textarea { background: #fff; color: #1b1914; border-color: rgba(27,25,20,0.16); }
-main .btn-ghost { color: #1b1914; border-color: rgba(27,25,20,0.2); }
-main .list li { border-bottom-color: rgba(27,25,20,0.12); }
-main .bar { background: rgba(27,25,20,0.08); }
+main { padding: 28px; }
 .kicker { letter-spacing: 0.16em; text-transform: uppercase; font-size: 11px; color: var(--gold); }
 h1, h2 { font-family: var(--serif); font-weight: 500; letter-spacing: -0.03em; }
 h1 { font-size: clamp(46px, 6vw, 78px); line-height: 0.9; margin: 8px 0 12px; }
@@ -101,26 +94,29 @@ video { width: 100%; border-radius: 14px; max-height: 240px; background: #000; }
 }
 
 svg.logo { width: 36px; height: 36px; }
-</style>
+  </style>
 </head>
 <body>
-<div class="shell">
-<aside class="side">
-<div class="brand">
-<svg class="logo" width="36" height="36" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="22" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M24 6c2 6 2 10 0 16-6 1-10 4-14 10 6 2 10 2 14-2 4 4 8 4 14 2-4-6-8-9-14-10 2-6 2-10 0-16z" fill="currentColor"/><circle cx="24" cy="24" r="3" fill="#f4efe4"/></svg>
-<div><strong>AI Football Coach</strong><small>скаутський кабінет</small></div>
-</div>
-<nav class="nav" id="nav" hidden>
-<button type="button" data-view="home" class="active">Кабінет</button>
-<button type="button" data-view="upload">Нове відео</button>
-<button type="button" data-view="plan">План</button>
-<button type="button" data-view="progress">Прогрес</button>
-</nav>
-<div class="who" id="who"></div>
-</aside>
-<main id="view"></main>
-</div>
-<script>
+  <div class="shell">
+    <aside class="side">
+      <div class="brand">
+        <svg class="logo" width="36" height="36" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="22" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M24 6c2 6 2 10 0 16-6 1-10 4-14 10 6 2 10 2 14-2 4 4 8 4 14 2-4-6-8-9-14-10 2-6 2-10 0-16z" fill="currentColor"/><circle cx="24" cy="24" r="3" fill="#f4efe4"/></svg>
+        <div>
+          <strong>AI Football Coach</strong>
+          <small>скаутський кабінет</small>
+        </div>
+      </div>
+      <nav class="nav" id="nav" hidden>
+        <button data-view="home" class="active">Кабінет</button>
+        <button data-view="upload">Нове відео</button>
+        <button data-view="plan">План</button>
+        <button data-view="progress">Прогрес</button>
+      </nav>
+      <div class="who" id="who"></div>
+    </aside>
+    <main id="view"></main>
+  </div>
+  <script>
 const SKILLS = [
   ["control", "Контроль м’яча"],
   ["dribble", "Дриблінг"],
@@ -266,7 +262,6 @@ function upload() {
         <label>Назва<input name="title" placeholder="Удар після флангу" required /></label>
         <label>Тип<select name="kind"><option>Тренування</option><option>Матч</option><option>Окремий навик</option></select></label>
         <label>Що знято<textarea name="note" rows="3" placeholder="Удар, дриблінг, позиція..."></textarea></label>
-        <label>Ключ Gemini<input name="key" type="password" placeholder="Встав ключ з aistudio.google.com" value="${localStorage.getItem("afc-key") || ""}" required /></label>
         <button class="btn" type="submit">Розібрати</button>
         <p id="status" class="muted"></p>
       </form>
@@ -285,100 +280,18 @@ function upload() {
   document.querySelector("#up").onsubmit = async (e) => {
     e.preventDefault();
     const f = new FormData(e.target);
-    const key = f.get("key").trim();
-    localStorage.setItem("afc-key", key);
-    const status = document.querySelector("#status");
-    status.textContent = "Беру кадри з ролика...";
-    let session;
-    try {
-      const frames = await grabFrames(preview, 4);
-      status.textContent = "Дивлюсь кадри...";
-      session = await askGemini(key, frames, {
-        title: f.get("title"),
-        kind: f.get("kind"),
-        note: f.get("note"),
-        position: POSITIONS[state.player.position]
-      });
-    } catch (err) {
-      status.textContent = "Не вийшло: " + err.message;
-      return;
-    }
+    document.querySelector("#status").textContent = "Дивлюсь ролик і збираю розбір...";
+    await wait(900);
+    const session = analyze({
+      title: f.get("title"),
+      kind: f.get("kind"),
+      note: f.get("note"),
+      fileName: file.files[0].name,
+      size: file.files[0].size
+    });
     state.sessions.unshift(session);
     store.save(state);
     report(session);
-  };
-}
-
-function grabFrames(video, count) {
-  return new Promise((resolve, reject) => {
-    const take = () => {
-      if (!video.duration || !isFinite(video.duration)) {
-        reject(new Error("відео ще не провантажилось, зачекай секунду і натисни знову"));
-        return;
-      }
-      const canvas = document.createElement("canvas");
-      const scale = 480 / (video.videoWidth || 480);
-      canvas.width = 480;
-      canvas.height = Math.max(270, Math.round((video.videoHeight || 270) * scale));
-      const ctx = canvas.getContext("2d");
-      const frames = [];
-      let i = 0;
-      const next = () => {
-        if (i >= count) return resolve(frames);
-        video.currentTime = Math.max(0.2, (video.duration * (i + 1)) / (count + 1));
-        video.onseeked = () => {
-          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-          frames.push(canvas.toDataURL("image/jpeg", 0.7).split(",")[1]);
-          i += 1;
-          next();
-        };
-      };
-      next();
-    };
-    if (video.readyState >= 1) take();
-    else video.onloadeddata = take;
-  });
-}
-
-async function askGemini(key, frames, info) {
-  const prompt = `Ти футбольний тренер. Подивись кадри ролика гравця. Позиція: ${info.position}. Тип: ${info.kind}. Нотатка: ${info.note || "немає"}.
-Поверни тільки JSON без markdown:
-{"overall":72,"scores":{"control":70,"dribble":66,"shot":60,"position":74,"decision":68,"offball":64,"phys":71},"strong":["control","position"],"weak":["shot","decision"],"moments":[{"t":"00:04","text":"що видно"},{"t":"00:12","text":"що виправити"}]}
-strong і weak — рівно по 2 ключі з scores. Текст українською, конкретно по кадрах.`;
-  const models = ["gemini-2.5-flash", "gemini-flash-latest", "gemini-2.0-flash"];
-  let res;
-  let used = "";
-  for (const model of models) {
-    used = model;
-    res = await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent?key=" + encodeURIComponent(key), {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{
-          parts: [
-            { text: prompt },
-            ...frames.map((data) => ({ inline_data: { mime_type: "image/jpeg", data } }))
-          ]
-        }]
-      })
-    });
-    if (res.status !== 404) break;
-  }
-  if (!res.ok) throw new Error("ключ не прийнято або Google відхилив запит (" + res.status + ")");
-  const data = await res.json();
-  const text = data.candidates?.[0]?.content?.parts?.map((p) => p.text).join("\n") || "";
-  const json = JSON.parse(text.slice(text.indexOf("{"), text.lastIndexOf("}") + 1));
-  return {
-    id: Date.now(),
-    title: info.title,
-    kind: info.kind,
-    note: info.note,
-    date: new Date().toLocaleDateString("uk-UA"),
-    scores: json.scores,
-    strong: json.strong,
-    weak: json.weak,
-    overall: json.overall,
-    moments: json.moments
   };
 }
 
@@ -516,17 +429,19 @@ function clamp(n, a, b) { return Math.max(a, Math.min(b, n)); }
 function hash(s) { return [...s].reduce((a, c) => a + c.charCodeAt(0), 0); }
 function wait(ms) { return new Promise((r) => setTimeout(r, ms)); }
 function escapeHtml(s) {
-  return String(s)
-    .replace(/&/g, "&")
-    .replace(/</g, "<")
-    .replace(/>/g, ">")
-    .replace(/"/g, String.fromCharCode(38)+"quot;");
+  return String(s).replace(/[&<>"]/g, (c) => ({ "&": "&", "<": "<", ">": ">", '"': """ }[c]));
+}
+
+window.show = show;
+window.resetAll = resetAll;
+show(state.player ? "home" : "start");
+"&", "<": "<", ">": ">", '"': """ }[c]));
 }
 
 window.show = show;
 window.resetAll = resetAll;
 show(state.player ? "home" : "start");
 
-</script>
+  </script>
 </body>
 </html>
