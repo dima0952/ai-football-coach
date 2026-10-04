@@ -72,6 +72,8 @@ video { width:100%; border-radius:14px; max-height:240px; background:#000; }
 </div>
 <script>
 const WORKER = "https://small-haze-21fc.kontenetdima.workers.dev";
+const PAY_URL = "https://www.privat24.ua/send/khrqw";
+const PRICE = 100;
 const SKILLS = [["control","Контроль м'яча"],["dribble","Дриблінг"],["shot","Удар"],["position","Позиція"],["decision","Швидкість рішень"],["offball","Гра без м'яча"],["phys","Фізика"]];
 const POSITIONS = { GK:"Воротар", CB:"Центральний захисник", FB:"Крайній захисник", DM:"Опорний півзахисник", CM:"Центральний півзахисник", AM:"Атакувальний півзахисник", W:"Вінгер", ST:"Нападник" };
 const DRILLS = {
@@ -120,7 +122,8 @@ function home() {
   view.innerHTML = '<section class="sheet"><div class="kicker">' + POSITIONS[state.player.position] + " · " + state.player.foot + ' нога</div><h2>' + escapeHtml(state.player.name) + '</h2><p class="muted">' + state.sessions.length + ' відео в кабінеті.</p><div class="row"><button class="btn" onclick="show(\'upload\')">Завантажити відео</button><button class="btn-ghost" onclick="resetAll()">Скинути</button></div></section><section class="grid grid-2" style="margin-top:14px"><article class="sheet">' + (last ? '<div class="kicker">Останній розбір</div><div class="score">'+last.overall+'</div><p>'+escapeHtml(last.title)+'</p>' : '<h2>Поле пусте</h2><p class="muted">Перше відео відкриє оцінки.</p>') + '</article><article class="sheet"><div class="kicker">На чому стояти</div>' + (last ? skillBars(last.scores) : '<p class="muted">Після ролика тут будуть оцінки.</p>') + '</article></section>';
 }
 function upload() {
-  view.innerHTML = '<section class="grid grid-2"><article class="sheet"><div class="kicker">Нове відео</div><h2>Кинь ролик</h2><video id="preview" hidden controls></video></article><form class="sheet form" id="up"><div class="drop">Вибери відео<br><input id="file" type="file" accept="video/*" required style="margin-top:10px" /></div><label>Назва<input name="title" required /></label><label>Тип<select name="kind"><option>Тренування</option><option>Матч</option><option>Окремий навик</option></select></label><label>Що знято<textarea name="note" rows="3"></textarea></label><button class="btn" type="submit">Розібрати</button><p id="status" class="muted"></p></form></section>';
+  const credits = Number(localStorage.getItem("afc-credits") || "0");
+  view.innerHTML = '<section class="grid grid-2"><article class="sheet"><div class="kicker">Нове відео</div><h2>Кинь ролик</h2><video id="preview" hidden controls></video><p class="muted">Один розбір — ' + PRICE + ' грн. На рахунку: <b id="credits">' + credits + '</b></p></article><form class="sheet form" id="up"><div class="drop">Вибери відео<br><input id="file" type="file" accept="video/*" required style="margin-top:10px" /></div><label>Назва<input name="title" required /></label><label>Тип<select name="kind"><option>Тренування</option><option>Матч</option><option>Окремий навик</option></select></label><label>Що знято<textarea name="note" rows="3"></textarea></label><a class="btn" href="' + PAY_URL + '" target="_blank" rel="noopener" style="text-align:center;text-decoration:none">Оплатити ' + PRICE + ' грн</a><button class="btn-ghost" type="button" id="paid">Я оплатив</button><button class="btn" type="submit">Розібрати</button><p id="status" class="muted"></p></form></section>';
   const file = document.querySelector("#file");
   const preview = document.querySelector("#preview");
   file.onchange = () => {
@@ -130,15 +133,27 @@ function upload() {
     preview.src = URL.createObjectURL(f);
     if (!document.querySelector("[name=title]").value) document.querySelector("[name=title]").value = f.name.replace(/\.[^.]+$/, "");
   };
+  document.querySelector("#paid").onclick = () => {
+    const next = Number(localStorage.getItem("afc-credits") || "0") + 1;
+    localStorage.setItem("afc-credits", String(next));
+    document.querySelector("#credits").textContent = String(next);
+    document.querySelector("#status").textContent = "Оплату зараховано. Можна розбирати.";
+  };
   document.querySelector("#up").onsubmit = async (e) => {
     e.preventDefault();
-    const f = new FormData(e.target);
     const status = document.querySelector("#status");
+    const left = Number(localStorage.getItem("afc-credits") || "0");
+    if (left < 1) {
+      status.textContent = "Спочатку оплати " + PRICE + " грн і натисни «Я оплатив».";
+      return;
+    }
+    const f = new FormData(e.target);
     status.textContent = "Беру кадри...";
     try {
       const frames = await grabFrames(preview, 3);
       status.textContent = "Дивлюсь кадри...";
       const session = await askCoach(frames, { title:f.get("title"), kind:f.get("kind"), note:f.get("note"), position: POSITIONS[state.player.position] });
+      localStorage.setItem("afc-credits", String(left - 1));
       state.sessions.unshift(session);
       store.save(state);
       report(session);
